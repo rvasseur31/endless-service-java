@@ -14,15 +14,36 @@ import android.widget.Toast;
 
 public class EndlessService extends Service {
 
+    /**
+     * Initialize PowerManager.WakeLock
+     * So that our service will not be impacted by Doze Mode.
+     */
     private PowerManager.WakeLock wakeLock = null;
+    /**
+     * Boolean if our service is started or not.
+     */
     private boolean isServiceStarted = false;
 
+    /**
+     * Override onBind method.
+     *
+     * @param intent : Intent.
+     * @return always null.
+     */
     @Override
     public IBinder onBind(Intent intent) {
         new log("Some component want to bind with the service");
         return null;
     }
 
+    /**
+     * Override onStartCommand method.
+     *
+     * @param intent  : Intent.
+     * @param flags   : Flags.
+     * @param startId : startId.
+     * @return START_STICKY.
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         new log("onStartCommand executed with startId: " + startId);
@@ -41,6 +62,10 @@ public class EndlessService extends Service {
         return START_STICKY;
     }
 
+    /**
+     * Override onCreate method.
+     * Create the service in foreground.
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -48,6 +73,10 @@ public class EndlessService extends Service {
         startForeground(1, createNotification());
     }
 
+    /**
+     * Override onDestroy method.
+     * Destroy the running service.
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -55,7 +84,11 @@ public class EndlessService extends Service {
         Toast.makeText(this, "Service destroyed", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Method executed when the service is running.
+     */
     private void startService() {
+        // If the service already running, do nothing.
         if (isServiceStarted) return;
         new log("Starting the foreground service task");
         Toast.makeText(this, "Service starting its task", Toast.LENGTH_SHORT).show();
@@ -69,9 +102,9 @@ public class EndlessService extends Service {
             wakeLock.acquire(60 * 1000L /*1 minutes*/);
         }
 
-
+        // Create a thread and loop while the service is running.
         Thread thread = new Thread(() -> {
-            while(isServiceStarted){
+            while (isServiceStarted) {
                 try {
                     Thread.sleep(2000);
                     pingFakeServer();
@@ -80,9 +113,13 @@ public class EndlessService extends Service {
                 }
             }
         });
+        // Start thread.
         thread.start();
     }
 
+    /**
+     * Method executed to stop the running service.
+     */
     private void stopService() {
         new log("Stopping the foreground service");
         Toast.makeText(this, "Service stopping", Toast.LENGTH_SHORT).show();
@@ -99,10 +136,18 @@ public class EndlessService extends Service {
         new ServiceTracker().setServiceState(this, com.example.myapplication.ServiceState.STOPPED);
     }
 
+    /**
+     * Method executed while the service is running.
+     */
     private void pingFakeServer() {
         new log("Ping Fake Server");
     }
 
+    /**
+     * Method to create the notification show to the user.
+     *
+     * @return Notification with all params.
+     */
     private Notification createNotification() {
         String notificationChannelId = "ENDLESS SERVICE CHANNEL";
 
